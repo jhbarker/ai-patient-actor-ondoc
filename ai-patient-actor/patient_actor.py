@@ -9,6 +9,7 @@ from streamlit.components.v1 import html
 
 from openai import OpenAI
 from dotenv import load_dotenv
+load_dotenv()
 
 import base64
 import datetime
@@ -55,9 +56,14 @@ if "user" not in st.session_state:
     st.session_state["user"] = user
 
 # ---------------- App config
-MODEL_NAME = "gpt-4o"
-MODEL_NAME_ASSESSOR = "gpt-4o"
-TTS = OpenAI()
+# Set LM_STUDIO_URL in .env to use a local LM Studio model instead of OpenAI.
+# e.g. LM_STUDIO_URL=http://localhost:1234/v1
+# Also set LLM_MODEL_NAME to the model identifier shown in LM Studio.
+LM_STUDIO_URL = os.getenv("LM_STUDIO_URL")
+MODEL_NAME = os.getenv("LLM_MODEL_NAME", "gpt-4o")
+MODEL_NAME_ASSESSOR = MODEL_NAME
+LLM_KWARGS = {"openai_api_base": LM_STUDIO_URL} if LM_STUDIO_URL else {}
+TTS = None if LM_STUDIO_URL else OpenAI()
 
 FEEDBACK_SCORES = ["👎", "👍"]
 
@@ -102,7 +108,7 @@ def log_message(msg):
     log.info(msg)
 
 def fetch_exam_results(exam_type, stream_handler):
-    llm = LabAssistant(temperature=0, model_name=MODEL_NAME, streaming=True)
+    llm = LabAssistant(temperature=0, model_name=MODEL_NAME, streaming=True, **LLM_KWARGS)
     llm.callbacks = [stream_handler]
     if exam_type == "review":
         exam = "review of systems"
@@ -178,6 +184,7 @@ def render_assessment_page(mode="dx"):
             seed=45735737357357,
             temperature=0,
             streaming=True,
+            **LLM_KWARGS,
         )
         assessment_placeholder = st.empty()
         assessment_stream_handler = StreamHandler(assessment_placeholder)
@@ -385,6 +392,8 @@ def submit_feedback(feedback, subject):
         json.dump(feedback, f)
 
 def text_to_speech(text, play_immediately=True, blocking=False):
+    if TTS is None:
+        return None  # TTS not available when using a local LM Studio model
     tts_response = TTS.audio.speech.create(
         model="tts-1",
         voice="alloy",
@@ -427,9 +436,12 @@ st.markdown(
 
 if "api_key" not in st.session_state:
     log.info("Session started.")
-    key = app_utils.obtain_key(public_acces=True)
-    if not key:
-        key = render_auth_page()
+    if LM_STUDIO_URL:
+        key = "lm-studio"
+    else:
+        key = app_utils.obtain_key(public_acces=True)
+        if not key:
+            key = render_auth_page()
     st.session_state["api_key"] = key
     st.rerun()
 
@@ -477,6 +489,7 @@ if not st.session_state.encounter_finished:
             model_name=MODEL_NAME,
             streaming=st.session_state.output_mode == "Text",
             temperature=0,
+            **LLM_KWARGS,
         )
     llm = st.session_state.llm
     llm.streaming = st.session_state.output_mode == "Text"

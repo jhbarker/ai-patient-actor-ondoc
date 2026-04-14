@@ -1,0 +1,11 @@
+Metadata-Version: 2.4
+Name: ai_patient_actor
+Version: 0.1
+Summary: An LLM posing as a Patient Actor
+Home-page: https://git.dartmouth.edu/lib-digital-strategies/RDS/projects/ai-patient-actor
+Author: Simon Stone
+Author-email: simon.stone@dartmouth.edu
+Dynamic: author
+Dynamic: author-email
+Dynamic: home-page
+Dynamic: summary
