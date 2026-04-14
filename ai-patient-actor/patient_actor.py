@@ -108,7 +108,7 @@ def log_message(msg):
     log.info(msg)
 
 def fetch_exam_results(exam_type, stream_handler):
-    llm = LabAssistant(temperature=0, model_name=MODEL_NAME, streaming=True, **LLM_KWARGS)
+    llm = LabAssistant(temperature=0, model_name=MODEL_NAME, streaming=True, openai_api_key=st.session_state["api_key"], **LLM_KWARGS)
     llm.callbacks = [stream_handler]
     if exam_type == "review":
         exam = "review of systems"
