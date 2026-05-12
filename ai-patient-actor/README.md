@@ -14,9 +14,10 @@ pip install -r requirements.txt
 
 ### Locally
 
-To run the app, run the following command:
+To run the app, run the following command to activate the environment and run the app:
 
 ```
+conda activate patient-actor
 streamlit run patient_actor.py
 ```
 
